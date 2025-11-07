@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Reseach</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Sarabun", sans-serif; line-height: 2.0;
+            max-width: 900px; margin: 0 auto; padding: 20px;
+            background: #000; color: #fff; scroll-behavior: smooth;
+        }
+        h1 { text-align: center; color: #fff; font-weight: 600; margin-bottom: 40px; font-size: 28px; }
+        h2 { text-align: center; color: #ccc; margin-bottom: 30px; }
+        h3 { color: #fff; margin: 0; }
+        p.intro { text-align: center; color: #fff; font-weight: 300; margin-bottom: 30px; background: #333; padding: 15px; border-radius: 12px; font-size: 18px; }
+        .paragraph {
+            margin: 30px 0; padding: 25px; background: #fff; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.5s ease; opacity: 0.2; filter: brightness(0.2);
+            min-height: 200px; display: flex; flex-direction: column; align-items: center;
+            color: #000;
+        }
+        .paragraph.active { opacity: 1; filter: brightness(1.2); transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); border: 1px solid rgba(102,126,234,0.3); }
+        .text { font-size: 20px; margin-bottom: 15px; font-weight: 400; text-align: center; max-width: 100%; color: #000; }
+        .paragraph.shorts { flex-direction: row; gap: 20px; align-items: center; justify-content: center; min-height: auto; }
+        .paragraph.shorts.reverse { flex-direction: row-reverse; }
+        .paragraph.shorts .text { flex: 1; margin-bottom: 0; text-align: center; color: #000; }
+        .paragraph.shorts .youtube-embed { flex: 1; max-width: 300px; aspect-ratio: 9/16; }
+        .youtube-embed {
+            position: relative; margin: 20px auto; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3); max-width: 100%;
+        }
+        .youtube-embed iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        .paragraph:not(.shorts) .youtube-embed { padding-bottom: 56.25%; height: 0; width: 100%; }
+
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .book-card {
+            background: #222;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            color: #fff;
+        }
+        .book-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .book-card h3 { margin: 0 0 10px; color: #fff; }
+        .book-card h3 a { color: inherit; text-decoration: none; }
+        .book-card p { color: #ccc; margin: 0 0 10px; }
+        .book-card small { color: #999; }
+
+        /* Search Box */
+        .search-container {
+            text-align: center; margin-bottom: 30px;
+        }
+        .search-input {
+            width: 100%; max-width: 400px; padding: 12px 20px; border: 1px solid #444; border-radius: 25px; background: #222; color: #fff; font-size: 16px; font-family: inherit;
+        }
+        .search-input::placeholder { color: #999; }
+        .search-input:focus { outline: none; border-color: #bb86fc; box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.1); }
+
+        .back-link { text-align: center; margin-bottom: 20px; }
+        .back-link a { color: #bb86fc; text-decoration: none; font-weight: 500; }
+
+        /* Pagination */
+        .pagination {
+            display: flex; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 30px; gap: 5px;
+        }
+        .page-btn {
+            background: #333; color: #fff; border: 1px solid #444; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: inherit;
+        }
+        .page-btn:hover { background: #444; }
+        .current-page {
+            background: #bb86fc; color: #fff; padding: 8px 12px; border-radius: 5px; font-weight: bold;
+        }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Ad Widget */
+        .ad-widget {
+            position: fixed; bottom: 20px; right: 20px; background: #333; border-radius: 12px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; max-width: 250px; text-align: center; color: #fff; cursor: pointer;
+        }
+        .ad-widget img { width: 100%; max-width: 230px; height: auto; border-radius: 8px; display: block; margin-bottom: 8px; }
+        .ad-widget p { margin: 0; font-size: 12px; color: #FFD700; }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .paragraph { align-items: center; justify-content: center; }
+            .paragraph.shorts, .paragraph.shorts.reverse { flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+            .paragraph.shorts .youtube-embed { max-width: 100%; aspect-ratio: 16/9; }
+            .paragraph { margin: 20px 0; padding: 20px; min-height: 150px; }
+            .text { font-size: 18px; }
+            h1 { font-size: 24px; }
+            p.intro { font-size: 16px; }
+            .books-grid { grid-template-columns: 1fr; }
+            .ad-widget { bottom: 10px; right: 10px; max-width: 200px; padding: 8px; }
+            .pagination { gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>📚 E-Research || เรียงลำดับชุดข้อมูล</h1>
+    <div id="main-content"></div>
+
+    <!-- Ad Widget -->
+    <div class="ad-widget" id="ad-widget" style="display: none;">
+        <a id="ad-link" target="_blank" rel="noopener">
+            <img id="ad-image" src="" alt="Ad" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNDQ0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFkPC90ZXh0Pjwvc3ZnPg=='">
+        </a>
+        <p id="ad-text"></p>
+    </div>
+
+    <script>
+        let currentSearchQuery = '';
+        let currentSearchPage = 1;
+        let allBooks = [];
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function highlight(text, term) {
+            if (!term || !term.trim()) return escapeHtml(text);
+            const regex = new RegExp(escapeRegExp(term), 'gi');
+            let lastIndex = 0;
+            const parts = [];
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                const before = text.slice(lastIndex, match.index);
+                parts.push(escapeHtml(before));
+                parts.push(`<mark style="background-color: yellow; color: black; font-weight: bold;">${escapeHtml(match[0])}</mark>`);
+                lastIndex = match.index + match[0].length;
+            }
+            parts.push(escapeHtml(text.slice(lastIndex)));
+            return parts.join('');
+        }
+
+        function buildTextHtml(plainText, query) {
+            const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"'\)\]\s])/g;
+            const urls = [];
+            let placeholderText = plainText;
+            let index = 0;
+            let urlMatch;
+            while ((urlMatch = urlRegex.exec(plainText)) !== null) {
+                const placeholder = `__URL_${index}__`;
+                urls[index] = urlMatch[0];
+                placeholderText = placeholderText.slice(0, urlMatch.index) + placeholder + placeholderText.slice(urlMatch.index + urlMatch[0].length);
+                index++;
+            }
+            const highlighted = highlight(placeholderText, query);
+            let finalHtml = highlighted;
+            urls.forEach((url, i) => {
+                const placeholder = `__URL_${i}__`;
+                const linkHtml = `<a href="${escapeHtml(url)}" target="_blank" style="color: #667eea; text-decoration: none;">${escapeHtml(url)}</a>`;
+                finalHtml = finalHtml.replace(new RegExp(escapeRegExp(placeholder), 'g'), linkHtml);
+            });
+            return finalHtml.replace(/\n/g, '<br>\n');
+        }
+
+        function extractYouTubeId(url) {
+            const pattern = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([a-zA-Z0-9_-]{11})/;
+            const match = url.match(pattern);
+            return match ? match[1] : null;
+        }
+
+        function getEmbedUrl(url) {
+            const videoId = extractYouTubeId(url);
+            if (!videoId) return null;
+            const urlObj = new URL(url);
+            const params = new URLSearchParams(urlObj.search);
+            params.delete('v');
+            params.set('hl', 'th');
+            params.set('cc_lang_pref', 'th');
+            return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+        }
+
+        function goToPage(page) {
+            showBooks(currentSearchQuery, page);
+        }
+
+        function showBooks(query = '', page = 1) {
+            document.title = 'E-research';
+            currentSearchQuery = query;
+            currentSearchPage = page;
+            const itemsPerPage = 10;
+            const trimmedQuery = query.trim();
+            let html = `<div class="search-container"><input type="text" class="search-input" id="search-input" placeholder="ค้นหารีเสริช..." value="${escapeHtml(query)}"></div>`;
+            let displayedItems = [];
+            let totalItems = 0;
+            let totalPages = 1;
+            let h2Text = '';
+
+            if (!trimmedQuery) {
+                totalItems = allBooks.length;
+                totalPages = Math.ceil(totalItems / itemsPerPage);
+                displayedItems = allBooks.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+            } else {
+                const lowerQuery = query.toLowerCase();
+                let results = [];
+                allBooks.forEach(book => {
+                    let hasParaMatch = false;
+                    book.paragraphs.forEach((para, i) => {
+                        if (para.text.toLowerCase().includes(lowerQuery)) {
+                            let snippet = para.text;
+                            const maxLen = 150;
+                            if (snippet.length > maxLen) {
+                                const escapedQ = escapeRegExp(query);
+                                const regex = new RegExp(escapedQ, 'i');
+                                let match = regex.exec(snippet);
+                                if (match) {
+                                    let start = Math.max(0, match.index - 50);
+                                    let end = Math.min(snippet.length, match.index + match[0].length + 50);
+                                    snippet = snippet.substring(start, end);
+                                    if (start > 0) snippet = '...' + snippet;
+                                    if (end < para.text.length) snippet += '...';
+                                } else {
+                                    snippet = snippet.substring(0, maxLen) + '...';
+                                }
+                            }
+                            results.push({
+                                book,
+                                paraIndex: i,
+                                snippet,
+                                matchType: 'para'
+                            });
+                            hasParaMatch = true;
+                        }
+                    });
+                    if (!hasParaMatch) {
+                        let snippet = '';
+                        let matchType = null;
+                        if (book.title.toLowerCase().includes(lowerQuery)) {
+                            snippet = book.description || book.title;
+                            matchType = 'title';
+                        } else if (book.description && book.description.toLowerCase().includes(lowerQuery)) {
+                            snippet = book.description;
+                            matchType = 'desc';
+                        }
+                        if (matchType) {
+                            results.push({
+                                book,
+                                paraIndex: null,
+                                snippet,
+                                matchType
+                            });
+                        }
+                    }
+                });
+                results.sort((a, b) => new Date(b.book.updated) - new Date(a.book.updated));
+                totalItems = results.length;
+                totalPages = Math.ceil(totalItems / itemsPerPage);
+                displayedItems = results.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+                h2Text = `ผลการค้นหา "${escapeHtml(query)}" (${totalItems} ผลลัพธ์, หน้า ${page} จาก ${totalPages})`;
+            }
+
+            html += `<h2>${h2Text}</h2>`;
+            if (totalItems === 0) {
+                html += '<p style="text-align: center; color: #ccc; font-size: 18px;">ไม่พบรีเสริชที่ตรงกับการค้นหา</p>';
+            } else {
+                html += '<div class="books-grid">';
+                if (!trimmedQuery) {
+                    displayedItems.forEach(b => {
+                        html += `
+                            <div class="book-card">
+                                <h3><a href="#${b.slug}">${highlight(b.title, query)}</a></h3>
+                                <p>${buildTextHtml(b.description || '', query)}</p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    displayedItems.forEach(r => {
+                        const hash = r.paraIndex !== null ? `${r.book.slug}|para-${r.paraIndex}` : r.book.slug;
+                        const highlightedSnippet = buildTextHtml(r.snippet, query);
+                        let headerHtml = '';
+                        let smallHtml = '';
+                        if (r.matchType === 'para') {
+                            headerHtml = `<h3><a href="#${hash}">${escapeHtml(r.book.title)}</a></h3>`;
+                            smallHtml = `<small>ย่อหน้า ${r.paraIndex + 1}</small>`;
+                        } else if (r.matchType === 'title') {
+                            headerHtml = `<h3><a href="#${hash}">หัวข้อ: ${highlight(r.book.title, query)}</a></h3>`;
+                            smallHtml = `<small>${escapeHtml(r.book.title)}</small>`;
+                        } else { // desc
+                            headerHtml = `<h3><a href="#${hash}">${escapeHtml(r.book.title)}</a></h3>`;
+                            smallHtml = `<small>ในคำอธิบาย</small>`;
+                        }
+                        html += `
+                            <div class="book-card">
+                                ${headerHtml}
+                                <p>${highlightedSnippet}</p>
+                                ${smallHtml}
+                            </div>
+                        `;
+                    });
+                }
+                html += '</div>';
+            }
+
+            // Pagination
+            if (totalPages > 1) {
+                html += '<div class="pagination">';
+                if (page > 1) {
+                    html += `<button class="page-btn" onclick="goToPage(${page - 1})">ก่อนหน้า</button>`;
+                }
+                for (let i = 1; i <= totalPages; i++) {
+                    if (i === page) {
+                        html += `<span class="current-page">${i}</span>`;
+                    } else {
+                        html += `<button class="page-btn" onclick="goToPage(${i})">${i}</button>`;
+                    }
+                }
+                if (page < totalPages) {
+                    html += `<button class="page-btn" onclick="goToPage(${totalPages})">ถัดไป</button>`;
+                }
+                html += '</div>';
+            }
+
+            document.getElementById('main-content').innerHTML = html;
+
+            // Focus and cursor position for search input
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.focus();
+                const len = searchInput.value.length;
+                searchInput.setSelectionRange(len, len);
+                // Search functionality
+                searchInput.addEventListener('input', (e) => {
+                    showBooks(e.target.value, 1);
+                });
+            }
+        }
+
+        function showBook(slug, paraIndex = null) {
+            document.title = slug.replace(/_/g, ' ').toUpperCase();
+            fetch(`${slug}.json`)
+                .then(r => r.json())
+                .then(data => {
+                    let html = `<p class="back-link"><a href="#">← กลับไปรายการรีเสริช</a></p>
+                                <h1>${escapeHtml(data.title)}</h1>
+                                <p class="intro">ระบบจะจำตำแหน่งเลื่อนอ่านของคุณ กลับมาอ่านต่อได้ทุกเมื่อ... 📖</p>`;
+                    data.paragraphs.forEach((para, index) => {
+                        const processedText = buildTextHtml(para.text, currentSearchQuery);
+                        let youtubeEmbed = '';
+                        let shortsClass = '';
+                        if (para.youtube_url) {
+                            const isShorts = para.youtube_url.includes('/shorts/');
+                            if (isShorts) {
+                                shortsClass = Math.random() < 0.5 ? 'shorts' : 'shorts reverse';
+                            }
+                            const embedUrl = getEmbedUrl(para.youtube_url);
+                            if (embedUrl) {
+                                youtubeEmbed = `<div class="youtube-embed">
+                                    <iframe src="${embedUrl}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                                </div>`;
+                            } else {
+                                youtubeEmbed = '<p style="color:#ff6b6b;font-style:italic;">⚠️ URL YouTube ไม่ถูกต้อง ไม่สามารถ embed ได้</p>';
+                            }
+                        }
+                        html += `<div id="para-${index}" class="paragraph ${shortsClass}">
+                                    <div class="text">${processedText}</div>
+                                    ${youtubeEmbed}
+                                 </div>`;
+                    });
+                    document.getElementById('main-content').innerHTML = html;
+
+                    // Intersection Observer
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(e => {
+                            if (e.isIntersecting) e.target.classList.add('active');
+                            else e.target.classList.remove('active');
+                        });
+                    }, { threshold: 0.7 });
+                    document.querySelectorAll('.paragraph').forEach(p => observer.observe(p));
+
+                    // Scroll to specific paragraph if specified
+                    if (paraIndex !== null) {
+                        setTimeout(() => {
+                            const el = document.getElementById(`para-${paraIndex}`);
+                            if (el) {
+                                el.classList.add('active');
+                                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        }, 100);
+                    }
+
+                    // Scroll restore and save
+                    const scrollKey = data.slug.replace(/\s+/g, '_').toLowerCase() + '_scrollPosition';
+                    const saved = localStorage.getItem(scrollKey);
+                    if (saved && paraIndex === null) {
+                        window.scrollTo(0, parseInt(saved));
+                    }
+                    let timeout;
+                    const saveScroll = () => {
+                        clearTimeout(timeout);
+                        timeout = setTimeout(() => localStorage.setItem(scrollKey, window.pageYOffset), 500);
+                    };
+                    window.removeEventListener('scroll', saveScroll);
+                    window.addEventListener('scroll', saveScroll);
+
+                    // Back link functionality
+                    document.querySelector('.back-link a').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (currentSearchQuery) {
+                            showBooks(currentSearchQuery, currentSearchPage);
+                        } else {
+                            showBooks('', currentSearchPage);
+                        }
+                    });
+                })
+                .catch(() => {
+                    document.getElementById('main-content').innerHTML = '<p>ไม่พบรีเสริชนี้</p>';
+                });
+        }
+
+        // Load ads from ads.json and pick random
+        function loadAd() {
+            fetch('ads.json')
+                .then(r => r.json())
+                .then(ads => {
+                    if (!Array.isArray(ads) || ads.length === 0) {
+                        document.getElementById('ad-widget').style.display = 'none';
+                        return;
+                    }
+                    const randomAd = ads[Math.floor(Math.random() * ads.length)];
+                    // Random text if ||
+                    let displayText = randomAd.text;
+                    if (displayText.includes('||')) {
+                        const texts = displayText.split('||').map(t => t.trim()).filter(t => t);
+                        displayText = texts[Math.floor(Math.random() * texts.length)];
+                    }
+                    const widget = document.getElementById('ad-widget');
+                    const linkEl = document.getElementById('ad-link');
+                    const imgEl = document.getElementById('ad-image');
+                    const textEl = document.getElementById('ad-text');
+                    linkEl.href = randomAd.link;
+                    imgEl.src = randomAd.image;
+                    textEl.textContent = displayText;
+                    widget.style.display = 'block';
+                })
+                .catch(() => {
+                    document.getElementById('ad-widget').style.display = 'none';
+                });
+        }
+
+        window.addEventListener('load', () => {
+            loadAd();
+            currentSearchQuery = '';
+            currentSearchPage = 1;
+            fetch('books.json')
+                .then(r => r.json())
+                .then(booksList => {
+                    const promises = booksList.map(book => 
+                        fetch(`${book.slug}.json`)
+                            .then(r => r.json())
+                            .then(fullData => ({
+                                ...book,
+                                paragraphs: fullData.paragraphs || []
+                            }))
+                            .catch(() => book)
+                    );
+                    return Promise.all(promises).then(loadedBooks => {
+                        allBooks = loadedBooks.sort((a, b) => new Date(b.updated) - new Date(a.updated));
+                        if (location.hash) {
+                            const hash = location.hash.slice(1);
+                            const parts = hash.split('|');
+                            const slug = parts[0];
+                            let paraIndex = null;
+                            if (parts[1] && parts[1].startsWith('para-')) {
+                                paraIndex = parseInt(parts[1].slice(5));
+                            }
+                            showBook(slug, paraIndex);
+                        } else {
+                            showBooks('', 1);
+                        }
+                    });
+                })
+                .catch(() => {
+                    document.getElementById('main-content').innerHTML = '<p>ยังไม่มีรีเสริชใด ๆ</p>';
+                });
+        });
+
+        window.addEventListener('hashchange', () => {
+            const hash = location.hash.slice(1);
+            if (!hash) {
+                showBooks(currentSearchQuery, currentSearchPage);
+                return;
+            }
+            const parts = hash.split('|');
+            const slug = parts[0];
+            let paraIndex = null;
+            if (parts[1] && parts[1].startsWith('para-')) {
+                paraIndex = parseInt(parts[1].slice(5));
+            }
+            showBook(slug, paraIndex);
+        });
+    </script>
+</body>
+</html>
