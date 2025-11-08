@@ -85,12 +85,12 @@
         }
         .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* User Tip (เดิม promo-widget - ไม่มี position fixed ใน CSS) */
-        .user-tip {
-            background: #333; border-radius: 12px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; max-width: 250px; text-align: center; color: #fff; cursor: pointer; display: none; /* ซ่อนเริ่มต้น */
+        /* Ad Widget */
+        .ad-widget {
+            position: fixed; bottom: 20px; right: 20px; background: #333; border-radius: 12px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; max-width: 250px; text-align: center; color: #fff; cursor: pointer;
         }
-        .user-tip img { width: 100%; max-width: 230px; height: auto; border-radius: 8px; display: block; margin-bottom: 8px; }
-        .user-tip p { margin: 0; font-size: 12px; color: #FFD700; }
+        .ad-widget img { width: 100%; max-width: 230px; height: auto; border-radius: 8px; display: block; margin-bottom: 8px; }
+        .ad-widget p { margin: 0; font-size: 12px; color: #FFD700; }
 
         @media (max-width: 768px) {
             body { padding: 10px; }
@@ -102,7 +102,7 @@
             h1 { font-size: 24px; }
             p.intro { font-size: 16px; }
             .books-grid { grid-template-columns: 1fr; }
-            .user-tip { max-width: 200px; padding: 8px; }
+            .ad-widget { bottom: 10px; right: 10px; max-width: 200px; padding: 8px; }
             .pagination { gap: 10px; }
         }
     </style>
@@ -111,12 +111,12 @@
     <h1>📚 E-Research || เรียงลำดับชุดข้อมูล</h1>
     <div id="main-content"></div>
 
-    <!-- User Tip -->
-    <div class="user-tip" id="user-tip">
-        <a id="tip-link" target="_blank" rel="noopener">
-            <img id="tip-image" src="" alt="Tip" onerror="this.parentElement.parentElement.style.display='none';">
+    <!-- Ad Widget -->
+    <div class="ad-widget" id="ad-widget" style="display: none;">
+        <a id="ad-link" target="_blank" rel="noopener">
+            <img id="ad-image" src="" alt="Ad" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNDQ0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFkPC90ZXh0Pjwvc3ZnPg=='">
         </a>
-        <p id="tip-text"></p>
+        <p id="ad-text"></p>
     </div>
 
     <script>
@@ -495,49 +495,38 @@
                 });
         }
 
-        // Load tips from tips.json with delay and dynamic positioning
-        function loadTip() {
-            setTimeout(() => {  // Delay 1-2s เพื่อเลี่ยง detection
-                fetch('tips.json')
-                    .then(r => {
-                        if (!r.ok) throw new Error('Fetch failed');
-                        return r.json();
-                    })
-                    .then(tips => {
-                        if (!Array.isArray(tips) || tips.length === 0) {
-                            document.getElementById('user-tip').style.display = 'none';
-                            return;
-                        }
-                        const randomTip = tips[Math.floor(Math.random() * tips.length)];
-                        // Random text if ||
-                        let displayText = randomTip.text;
-                        if (displayText.includes('||')) {
-                            const texts = displayText.split('||').map(t => t.trim()).filter(t => t);
-                            displayText = texts[Math.floor(Math.random() * texts.length)];
-                        }
-                        const widget = document.getElementById('user-tip');
-                        const linkEl = document.getElementById('tip-link');
-                        const imgEl = document.getElementById('tip-image');
-                        const textEl = document.getElementById('tip-text');
-                        linkEl.href = randomTip.link;
-                        imgEl.src = randomTip.image;
-                        textEl.textContent = displayText;
-
-                        // Set position dynamically with JS to bypass CSS selectors
-                        widget.style.position = 'fixed';
-                        widget.style.bottom = '20px';
-                        widget.style.right = '20px';
-                        widget.style.display = 'block';
-                    })
-                    .catch(() => {
-                        // ถ้า fetch fail (blocked), hide ทันที
-                        document.getElementById('user-tip').style.display = 'none';
-                    });
-            }, Math.random() * 1000 + 1000);  // Random delay 1-2s
+        // Load ads from ads.json and pick random
+        function loadAd() {
+            fetch('ads.json')
+                .then(r => r.json())
+                .then(ads => {
+                    if (!Array.isArray(ads) || ads.length === 0) {
+                        document.getElementById('ad-widget').style.display = 'none';
+                        return;
+                    }
+                    const randomAd = ads[Math.floor(Math.random() * ads.length)];
+                    // Random text if ||
+                    let displayText = randomAd.text;
+                    if (displayText.includes('||')) {
+                        const texts = displayText.split('||').map(t => t.trim()).filter(t => t);
+                        displayText = texts[Math.floor(Math.random() * texts.length)];
+                    }
+                    const widget = document.getElementById('ad-widget');
+                    const linkEl = document.getElementById('ad-link');
+                    const imgEl = document.getElementById('ad-image');
+                    const textEl = document.getElementById('ad-text');
+                    linkEl.href = randomAd.link;
+                    imgEl.src = randomAd.image;
+                    textEl.textContent = displayText;
+                    widget.style.display = 'block';
+                })
+                .catch(() => {
+                    document.getElementById('ad-widget').style.display = 'none';
+                });
         }
 
         window.addEventListener('load', () => {
-            loadTip();  // เรียกแทน loadPromo
+            loadAd();
             currentSearchQuery = '';
             currentSearchPage = 1;
             fetch('books.json')
