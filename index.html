@@ -15,16 +15,16 @@
         h1 { text-align: center; color: #fff; font-weight: 600; margin-bottom: 40px; font-size: 28px; }
         h2 { text-align: center; color: #ccc; margin-bottom: 30px; }
         h3 { color: #fff; margin: 0; }
-        p.intro { text-align: center; color: #fff; font-weight: 300; margin-bottom: 30px; background: #333; padding: 15px; border-radius: 12px; font-size: 18px; }
-        .paragraph {
-            margin: 30px 0; padding: 25px; background: #fff; border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: all 0.5s ease; opacity: 0.2; filter: brightness(0.2);
-            min-height: 200px; display: flex; flex-direction: column; align-items: center;
-            color: #000;
-        }
-        .paragraph.active { opacity: 1; filter: brightness(1.2); transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); border: 1px solid rgba(102,126,234,0.3); }
-        .text { font-size: 20px; margin-bottom: 15px; font-weight: 400; text-align: center; max-width: 100%; color: #000; }
+        p.intro { text-align: center;  font-weight: 300; margin-bottom: 30px; background: #333; padding: 15px; border-radius: 12px; font-size: 18px; }
+            .paragraph {
+                margin: 30px 0; padding: 25px; border-radius: 16px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                transition: all 0.5s ease; opacity: 0.2; filter: brightness(0.2);
+                min-height: 200px; display: flex; flex-direction: column; align-items: center;
+                color: #000;
+            }
+        .paragraph.active { opacity: 1; filter: brightness(1.2); transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 18px rgba(255, 165, 0, 0.8); border: 1px solid rgba(102,126,234,0.3); }
+        .text { font-size: 20px; margin-bottom: 15px; font-weight: 400; text-align: center; max-width: 100%; color: #000; padding: 10px 20px; background-color: oklab(79.837% 0 -0.00009); border-radius: 20px; display: inline-block; }
         .paragraph.shorts { flex-direction: row; gap: 20px; align-items: center; justify-content: center; min-height: auto; }
         .paragraph.shorts.reverse { flex-direction: row-reverse; }
         .paragraph.shorts .text { flex: 1; margin-bottom: 0; text-align: center; color: #000; }
@@ -133,23 +133,30 @@
             return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
-        function highlight(text, term) {
-            if (!term || !term.trim()) return escapeHtml(text);
+        function getPlainText(html) {
+            if (!html) return '';
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            return doc.body.textContent || '';
+        }
+
+        function highlight(plainText, term) {
+            if (!term || !term.trim()) return escapeHtml(plainText);
             const regex = new RegExp(escapeRegExp(term), 'gi');
             let lastIndex = 0;
             const parts = [];
             let match;
-            while ((match = regex.exec(text)) !== null) {
-                const before = text.slice(lastIndex, match.index);
+            while ((match = regex.exec(plainText)) !== null) {
+                const before = plainText.slice(lastIndex, match.index);
                 parts.push(escapeHtml(before));
                 parts.push(`<mark style="background-color: yellow; color: black; font-weight: bold;">${escapeHtml(match[0])}</mark>`);
                 lastIndex = match.index + match[0].length;
             }
-            parts.push(escapeHtml(text.slice(lastIndex)));
+            parts.push(escapeHtml(plainText.slice(lastIndex)));
             return parts.join('');
         }
 
-        function buildTextHtml(plainText, query) {
+        function linkifyAndHighlight(plainText, query) {
             const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"'\)\]\s])/g;
             const urls = [];
             let placeholderText = plainText;
@@ -168,7 +175,50 @@
                 const linkHtml = `<a href="${escapeHtml(url)}" target="_blank" style="color: #667eea; text-decoration: none;">${escapeHtml(url)}</a>`;
                 finalHtml = finalHtml.replace(new RegExp(escapeRegExp(placeholder), 'g'), linkHtml);
             });
-            return finalHtml.replace(/\n/g, '<br>\n');
+            return finalHtml;
+        }
+
+        function highlightHtml(html, query) {
+            if (!query || !query.trim()) return html;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const textNodes = [];
+            const walker = document.createTreeWalker(
+                doc.body,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+            let node;
+            while (node = walker.nextNode()) {
+                textNodes.push(node);
+            }
+            const regex = new RegExp(escapeRegExp(query), 'gi');
+            textNodes.forEach((textNode) => {
+                const text = textNode.textContent;
+                let lastIndex = 0;
+                const parent = textNode.parentNode;
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    if (match.index > lastIndex) {
+                        const before = document.createTextNode(text.slice(lastIndex, match.index));
+                        parent.insertBefore(before, textNode);
+                    }
+                    const mark = doc.createElement('mark');
+                    mark.style.backgroundColor = 'yellow';
+                    mark.style.color = 'black';
+                    mark.style.fontWeight = 'bold';
+                    mark.textContent = match[0];
+                    parent.insertBefore(mark, textNode);
+                    lastIndex = match.index + match[0].length;
+                }
+                if (lastIndex < text.length) {
+                    const after = document.createTextNode(text.slice(lastIndex));
+                    parent.insertBefore(after, textNode);
+                }
+                parent.removeChild(textNode);
+            });
+            return doc.body.innerHTML;
         }
 
         function extractYouTubeId(url) {
@@ -193,7 +243,7 @@
         }
 
         function showBooks(query = '', page = 1) {
-            document.title = 'E-research';
+            document.title = 'E-Research';
             currentSearchQuery = query;
             currentSearchPage = page;
             const itemsPerPage = 10;
@@ -214,8 +264,9 @@
                 allBooks.forEach(book => {
                     let hasParaMatch = false;
                     book.paragraphs.forEach((para, i) => {
-                        if (para.text.toLowerCase().includes(lowerQuery)) {
-                            let snippet = para.text;
+                        const plainPara = getPlainText(para.text);
+                        if (plainPara.toLowerCase().includes(lowerQuery)) {
+                            let snippet = plainPara;
                             const maxLen = 150;
                             if (snippet.length > maxLen) {
                                 const escapedQ = escapeRegExp(query);
@@ -226,7 +277,7 @@
                                     let end = Math.min(snippet.length, match.index + match[0].length + 50);
                                     snippet = snippet.substring(start, end);
                                     if (start > 0) snippet = '...' + snippet;
-                                    if (end < para.text.length) snippet += '...';
+                                    if (end < plainPara.length) snippet += '...';
                                 } else {
                                     snippet = snippet.substring(0, maxLen) + '...';
                                 }
@@ -244,11 +295,8 @@
                         let snippet = '';
                         let matchType = null;
                         if (book.title.toLowerCase().includes(lowerQuery)) {
-                            snippet = book.description || book.title;
+                            snippet = book.title;
                             matchType = 'title';
-                        } else if (book.description && book.description.toLowerCase().includes(lowerQuery)) {
-                            snippet = book.description;
-                            matchType = 'desc';
                         }
                         if (matchType) {
                             results.push({
@@ -274,17 +322,19 @@
                 html += '<div class="books-grid">';
                 if (!trimmedQuery) {
                     displayedItems.forEach(b => {
+                        const firstParaPlain = b.paragraphs.length > 0 ? getPlainText(b.paragraphs[0].text) : '';
+                        const shortDesc = firstParaPlain.slice(0, 100) + (firstParaPlain.length > 100 ? '...' : '');
                         html += `
                             <div class="book-card">
-                                <h3><a href="#${b.slug}">${highlight(b.title, query)}</a></h3>
-                                <p>${buildTextHtml(b.description || '', query)}</p>
+                                <h3><a href="#${b.slug}">${escapeHtml(b.title)}</a></h3>
+                                <p>${linkifyAndHighlight(shortDesc, query)}</p>
                             </div>
                         `;
                     });
                 } else {
                     displayedItems.forEach(r => {
                         const hash = r.paraIndex !== null ? `${r.book.slug}|para-${r.paraIndex}` : r.book.slug;
-                        const highlightedSnippet = buildTextHtml(r.snippet, query);
+                        const highlightedSnippet = linkifyAndHighlight(r.snippet, query);
                         let headerHtml = '';
                         let smallHtml = '';
                         if (r.matchType === 'para') {
@@ -293,9 +343,6 @@
                         } else if (r.matchType === 'title') {
                             headerHtml = `<h3><a href="#${hash}">หัวข้อ: ${highlight(r.book.title, query)}</a></h3>`;
                             smallHtml = `<small>${escapeHtml(r.book.title)}</small>`;
-                        } else { // desc
-                            headerHtml = `<h3><a href="#${hash}">${escapeHtml(r.book.title)}</a></h3>`;
-                            smallHtml = `<small>ในคำอธิบาย</small>`;
                         }
                         html += `
                             <div class="book-card">
@@ -344,15 +391,15 @@
         }
 
         function showBook(slug, paraIndex = null) {
-            document.title = slug.replace(/_/g, ' ').toUpperCase();
+            document.title = decodeURIComponent(slug).replace(/_/g, ' ').toLocaleUpperCase('th-TH');
             fetch(`${slug}.json`)
                 .then(r => r.json())
                 .then(data => {
                     let html = `<p class="back-link"><a href="#">← กลับไปรายการรีเสริช</a></p>
                                 <h1>${escapeHtml(data.title)}</h1>
-                                <p class="intro">ระบบจะจำตำแหน่งเลื่อนอ่านของคุณ กลับมาอ่านต่อได้ทุกเมื่อ... 📖</p>`;
+                                <p class="intro">ระบบจะจดจำตำแหน่งเลื่อนอ่านของคุณ... 📖</p>`;
                     data.paragraphs.forEach((para, index) => {
-                        const processedText = buildTextHtml(para.text, currentSearchQuery);
+                        const processedText = highlightHtml(para.text, currentSearchQuery);
                         let youtubeEmbed = '';
                         let shortsClass = '';
                         if (para.youtube_url) {
@@ -362,8 +409,9 @@
                             }
                             const embedUrl = getEmbedUrl(para.youtube_url);
                             if (embedUrl) {
-                                youtubeEmbed = `<div class="youtube-embed">
-                                    <iframe src="${embedUrl}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                                // Lazy load: ไม่ set src ทันที แต่เก็บใน data attribute
+                                youtubeEmbed = `<div class="youtube-embed" data-embed-url="${escapeHtml(embedUrl)}">
+                                    <iframe allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" loading="lazy"></iframe>
                                 </div>`;
                             } else {
                                 youtubeEmbed = '<p style="color:#ff6b6b;font-style:italic;">⚠️ URL YouTube ไม่ถูกต้อง ไม่สามารถ embed ได้</p>';
@@ -376,11 +424,24 @@
                     });
                     document.getElementById('main-content').innerHTML = html;
 
-                    // Intersection Observer
+                    // Intersection Observer - เพิ่ม logic โหลด YouTube เมื่อ active
                     const observer = new IntersectionObserver((entries) => {
                         entries.forEach(e => {
-                            if (e.isIntersecting) e.target.classList.add('active');
-                            else e.target.classList.remove('active');
+                            if (e.isIntersecting) {
+                                e.target.classList.add('active');
+                                // โหลด YouTube embed ถ้ามี
+                                const embedDiv = e.target.querySelector('.youtube-embed[data-embed-url]');
+                                if (embedDiv) {
+                                    const iframe = embedDiv.querySelector('iframe');
+                                    if (iframe && !iframe.src) {
+                                        iframe.src = embedDiv.dataset.embedUrl;
+                                        // ลบ data attribute เพื่อป้องกันโหลดซ้ำ
+                                        delete embedDiv.dataset.embedUrl;
+                                    }
+                                }
+                            } else {
+                                e.target.classList.remove('active');
+                            }
                         });
                     }, { threshold: 0.7 });
                     document.querySelectorAll('.paragraph').forEach(p => observer.observe(p));
@@ -392,6 +453,15 @@
                             if (el) {
                                 el.classList.add('active');
                                 el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                // Manual load YouTube สำหรับ para ที่ scroll ไป (fallback ถ้า observer ยังไม่ trigger)
+                                const embedDiv = el.querySelector('.youtube-embed[data-embed-url]');
+                                if (embedDiv) {
+                                    const iframe = embedDiv.querySelector('iframe');
+                                    if (iframe && !iframe.src) {
+                                        iframe.src = embedDiv.dataset.embedUrl;
+                                        delete embedDiv.dataset.embedUrl;
+                                    }
+                                }
                             }
                         }, 100);
                     }
