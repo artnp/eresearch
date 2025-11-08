@@ -85,12 +85,12 @@
         }
         .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Ad Widget */
-        .ad-widget {
+        /* Promo Widget (เดิม ad-widget) */
+        .promo-widget {
             position: fixed; bottom: 20px; right: 20px; background: #333; border-radius: 12px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; max-width: 250px; text-align: center; color: #fff; cursor: pointer;
         }
-        .ad-widget img { width: 100%; max-width: 230px; height: auto; border-radius: 8px; display: block; margin-bottom: 8px; }
-        .ad-widget p { margin: 0; font-size: 12px; color: #FFD700; }
+        .promo-widget img { width: 100%; max-width: 230px; height: auto; border-radius: 8px; display: block; margin-bottom: 8px; }
+        .promo-widget p { margin: 0; font-size: 12px; color: #FFD700; }
 
         @media (max-width: 768px) {
             body { padding: 10px; }
@@ -102,7 +102,7 @@
             h1 { font-size: 24px; }
             p.intro { font-size: 16px; }
             .books-grid { grid-template-columns: 1fr; }
-            .ad-widget { bottom: 10px; right: 10px; max-width: 200px; padding: 8px; }
+            .promo-widget { bottom: 10px; right: 10px; max-width: 200px; padding: 8px; }
             .pagination { gap: 10px; }
         }
     </style>
@@ -111,12 +111,12 @@
     <h1>📚 E-Research || เรียงลำดับชุดข้อมูล</h1>
     <div id="main-content"></div>
 
-    <!-- Ad Widget -->
-    <div class="ad-widget" id="ad-widget" style="display: none;">
-        <a id="ad-link" target="_blank" rel="noopener">
-            <img id="ad-image" src="" alt="Ad" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNDQ0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFkPC90ZXh0Pjwvc3ZnPg=='">
+    <!-- Promo Widget (เดิม Ad Widget) -->
+    <div class="promo-widget" id="promo-widget" style="display: none;">
+        <a id="promo-link" target="_blank" rel="noopener">
+            <img id="promo-img" src="" alt="Promo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNDQ0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFByb21vPC90ZXh0Pjwvc3ZnPg=='">
         </a>
-        <p id="ad-text"></p>
+        <p id="promo-text"></p>
     </div>
 
     <script>
@@ -495,38 +495,38 @@
                 });
         }
 
-        // Load ads from ads.json and pick random
-        function loadAd() {
-            fetch('ads.json')
+        // Load banners from banners.json and pick random (เดิม loadAd จาก ads.json)
+        function loadPromo() {
+            fetch('banners.json')
                 .then(r => r.json())
-                .then(ads => {
-                    if (!Array.isArray(ads) || ads.length === 0) {
-                        document.getElementById('ad-widget').style.display = 'none';
+                .then(banners => {
+                    if (!Array.isArray(banners) || banners.length === 0) {
+                        document.getElementById('promo-widget').style.display = 'none';
                         return;
                     }
-                    const randomAd = ads[Math.floor(Math.random() * ads.length)];
+                    const randomBanner = banners[Math.floor(Math.random() * banners.length)];
                     // Random text if ||
-                    let displayText = randomAd.text;
+                    let displayText = randomBanner.text;
                     if (displayText.includes('||')) {
                         const texts = displayText.split('||').map(t => t.trim()).filter(t => t);
                         displayText = texts[Math.floor(Math.random() * texts.length)];
                     }
-                    const widget = document.getElementById('ad-widget');
-                    const linkEl = document.getElementById('ad-link');
-                    const imgEl = document.getElementById('ad-image');
-                    const textEl = document.getElementById('ad-text');
-                    linkEl.href = randomAd.link;
-                    imgEl.src = randomAd.image;
+                    const widget = document.getElementById('promo-widget');
+                    const linkEl = document.getElementById('promo-link');
+                    const imgEl = document.getElementById('promo-img');
+                    const textEl = document.getElementById('promo-text');
+                    linkEl.href = randomBanner.link;
+                    imgEl.src = randomBanner.image;
                     textEl.textContent = displayText;
                     widget.style.display = 'block';
                 })
                 .catch(() => {
-                    document.getElementById('ad-widget').style.display = 'none';
+                    document.getElementById('promo-widget').style.display = 'none';
                 });
         }
 
         window.addEventListener('load', () => {
-            loadAd();
+            loadPromo();
             currentSearchQuery = '';
             currentSearchPage = 1;
             fetch('books.json')
