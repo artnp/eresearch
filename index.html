@@ -15,6 +15,7 @@
         h1 { text-align: center; color: #fff; font-weight: 600; margin-bottom: 40px; font-size: 28px; }
         h2 { text-align: center; color: #ccc; margin-bottom: 30px; }
         h3 { color: #fff; margin: 0; }
+        a {text-decoration: none;}
         p.intro { text-align: center;  font-weight: 300; margin-bottom: 30px; background: #333; padding: 15px; border-radius: 12px; font-size: 18px; }
             .paragraph {
                 margin: 30px 0; padding: 25px; border-radius: 16px;
@@ -248,7 +249,7 @@
             currentSearchPage = page;
             const itemsPerPage = 10;
             const trimmedQuery = query.trim();
-            let html = `<div class="search-container"><input type="text" class="search-input" id="search-input" placeholder="ค้นหารีเสริช..." value="${escapeHtml(query)}"></div>`;
+            let html = `<div class="search-container"><input type="text" class="search-input" id="search-input" placeholder="ค้นหารีเสริช..." value="${escapeHtml(query)}" autocomplete="off"></div>`;
             let displayedItems = [];
             let totalItems = 0;
             let totalPages = 1;
@@ -325,10 +326,10 @@
                         const firstParaPlain = b.paragraphs.length > 0 ? getPlainText(b.paragraphs[0].text) : '';
                         const shortDesc = firstParaPlain.slice(0, 100) + (firstParaPlain.length > 100 ? '...' : '');
                         html += `
-                            <div class="book-card">
-                                <h3><a href="#${b.slug}">${escapeHtml(b.title)}</a></h3>
+                            <a href="#${b.slug}"><div class="book-card">
+                                <h3>${escapeHtml(b.title)}</h3>
                                 <p>${linkifyAndHighlight(shortDesc, query)}</p>
-                            </div>
+                            </div></a>
                         `;
                     });
                 } else {
@@ -338,11 +339,11 @@
                         let headerHtml = '';
                         let smallHtml = '';
                         if (r.matchType === 'para') {
-                            headerHtml = `<h3><a href="#${hash}">${escapeHtml(r.book.title)}</a></h3>`;
-                            smallHtml = `<small>ย่อหน้า ${r.paraIndex + 1}</small>`;
+                            headerHtml = `<a href="#${hash}"><h3>${escapeHtml(r.book.title)}</h3>`;
+                            smallHtml = `<small>ย่อหน้า ${r.paraIndex + 1}</small></a>`;
                         } else if (r.matchType === 'title') {
-                            headerHtml = `<h3><a href="#${hash}">หัวข้อ: ${highlight(r.book.title, query)}</a></h3>`;
-                            smallHtml = `<small>${escapeHtml(r.book.title)}</small>`;
+                            headerHtml = `<a href="#${hash}"><h3>หัวข้อ: ${highlight(r.book.title, query)}</h3>`;
+                            smallHtml = `<small>${escapeHtml(r.book.title)}</small></a>`;
                         }
                         html += `
                             <div class="book-card">
